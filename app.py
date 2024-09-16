@@ -4,23 +4,25 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
+import joblib
 
-# Placeholder for loading the model and data
 @st.cache
-def load_model():
-    # Simulate model loading
-    return RandomForestRegressor(n_estimators=100, random_state=42)
-
 def load_data():
-    # Load the actual CSV file
     return pd.read_csv('Time_Series_5k_data.csv')
 
-model = load_model()
-data = load_data()
+def train_model(data):
+    # Prepare your data
+    X = data[['Quality Metric 1', 'Quality Metric 2', 'Products per day']]
+    y = data['Time to Quality Issue']
+    
+    # Initialize and train the model
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X, y)
+    return model
 
-# Show column names for debugging
-st.write("Data columns:", data.columns)
-st.write("First few rows of data:", data.head())
+# Load or train the model
+data = load_data()
+model = train_model(data)  # or use joblib.load if you have a pre-trained model
 
 # Sidebar for user inputs
 st.sidebar.header("Maintenance Prediction Dashboard")
@@ -36,8 +38,11 @@ input_features = {
 # Predict Button
 if st.sidebar.button("Predict"):
     features = np.array([list(input_features.values())]).reshape(1, -1)
-    prediction = model.predict(features)[0]
-    st.write(f"Predicted time to quality issue: {prediction:.2f} days")
+    try:
+        prediction = model.predict(features)[0]
+        st.write(f"Predicted time to quality issue: {prediction:.2f} days")
+    except NotFittedError:
+        st.write("Model is not trained or fitted.")
 
 # Visualization
 st.header("Data Visualization")
