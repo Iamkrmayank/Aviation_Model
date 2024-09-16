@@ -7,10 +7,13 @@ from sklearn.ensemble import RandomForestRegressor
 
 @st.cache
 def load_data():
-    return pd.read_csv('Time_Series_5k_data.csv')
+    return pd.read_csv('production_data_with_time_features.csv')
 
 def train_model(data):
-    required_columns = ['Quality Metric 1', 'Quality Metric 2', 'Products per day', 'Time to Quality Issue']
+    # Display columns to check for correct names
+    st.write("Columns in the data:", data.columns.tolist())
+    
+    required_columns = ['Quality Metric 1', 'Quality Metric 2', 'Production Day', 'Time to Quality Issue']
     missing_columns = [col for col in required_columns if col not in data.columns]
     
     if missing_columns:
@@ -18,7 +21,7 @@ def train_model(data):
         return None
 
     # Prepare your data
-    X = data[['Quality Metric 1', 'Quality Metric 2', 'Products per day']]
+    X = data[['Quality Metric 1', 'Quality Metric 2', 'Production Day']]
     y = data['Time to Quality Issue']
     
     # Initialize and train the model
@@ -37,7 +40,7 @@ st.sidebar.subheader("Model Parameters")
 input_features = {
     "Quality Metric 1": st.sidebar.slider("Quality Metric 1", min_value=0.0, max_value=1.0, value=0.5),
     "Quality Metric 2": st.sidebar.slider("Quality Metric 2", min_value=0.0, max_value=1.0, value=0.5),
-    "Products per day": st.sidebar.slider("Products per day", min_value=0, max_value=1000, value=500)
+    "Production Day": st.sidebar.slider("Production Day", min_value=0, max_value=31, value=15)  # Adjust based on your actual column
 }
 
 # Predict Button
@@ -65,14 +68,14 @@ if 'Quality Metric 1' in data.columns:
 else:
     st.write("Column 'Quality Metric 1' not found in the data.")
 
-st.subheader("Products Per Day")
-if 'Products per day' in data.columns:
+st.subheader("Production Day")
+if 'Production Day' in data.columns:
     fig, ax = plt.subplots()
-    sns.histplot(data['Products per day'], kde=True, ax=ax)
-    ax.set_title("Distribution of Products per Day")
+    sns.histplot(data['Production Day'], kde=True, ax=ax)
+    ax.set_title("Distribution of Production Day")
     st.pyplot(fig)
 else:
-    st.write("Column 'Products per day' not found in the data.")
+    st.write("Column 'Production Day' not found in the data.")
 
 # Feedback Loop
 st.header("Feedback Loop")
