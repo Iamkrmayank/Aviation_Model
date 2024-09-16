@@ -4,13 +4,19 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
-import joblib
 
 @st.cache
 def load_data():
     return pd.read_csv('Time_Series_5k_data.csv')
 
 def train_model(data):
+    required_columns = ['Quality Metric 1', 'Quality Metric 2', 'Products per day', 'Time to Quality Issue']
+    missing_columns = [col for col in required_columns if col not in data.columns]
+    
+    if missing_columns:
+        st.error(f"Missing columns: {', '.join(missing_columns)}")
+        return None
+
     # Prepare your data
     X = data[['Quality Metric 1', 'Quality Metric 2', 'Products per day']]
     y = data['Time to Quality Issue']
@@ -20,9 +26,8 @@ def train_model(data):
     model.fit(X, y)
     return model
 
-# Load or train the model
 data = load_data()
-model = train_model(data)  # or use joblib.load if you have a pre-trained model
+model = train_model(data)
 
 # Sidebar for user inputs
 st.sidebar.header("Maintenance Prediction Dashboard")
@@ -37,12 +42,15 @@ input_features = {
 
 # Predict Button
 if st.sidebar.button("Predict"):
-    features = np.array([list(input_features.values())]).reshape(1, -1)
-    try:
-        prediction = model.predict(features)[0]
-        st.write(f"Predicted time to quality issue: {prediction:.2f} days")
-    except NotFittedError:
-        st.write("Model is not trained or fitted.")
+    if model is not None:
+        features = np.array([list(input_features.values())]).reshape(1, -1)
+        try:
+            prediction = model.predict(features)[0]
+            st.write(f"Predicted time to quality issue: {prediction:.2f} days")
+        except Exception as e:
+            st.error(f"Prediction error: {str(e)}")
+    else:
+        st.error("Model is not trained or loaded properly.")
 
 # Visualization
 st.header("Data Visualization")
@@ -58,13 +66,13 @@ else:
     st.write("Column 'Quality Metric 1' not found in the data.")
 
 st.subheader("Products Per Day")
-if 'Production Day' in data.columns:
+if 'Products per day' in data.columns:
     fig, ax = plt.subplots()
-    sns.histplot(data['Production Day'], kde=True, ax=ax)
-    ax.set_title("Distribution of Production Day")
+    sns.histplot(data['Products per day'], kde=True, ax=ax)
+    ax.set_title("Distribution of Products per Day")
     st.pyplot(fig)
 else:
-    st.write("Column 'Production Day' not found in the data.")
+    st.write("Column 'Products per day' not found in the data.")
 
 # Feedback Loop
 st.header("Feedback Loop")
