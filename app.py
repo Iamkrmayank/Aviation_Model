@@ -6,19 +6,21 @@ import seaborn as sns
 from sklearn.ensemble import RandomForestRegressor
 
 # Placeholder for loading the model and data
-# In practice, you would load your trained model and data here
 @st.cache
 def load_model():
-    # Placeholder function to simulate model loading
+    # Simulate model loading
     return RandomForestRegressor(n_estimators=100, random_state=42)
 
 def load_data():
-    # Placeholder function to simulate data loading
-    # Replace with actual data loading
+    # Load the actual CSV file
     return pd.read_csv('Time_Series_5k_data.csv')
 
 model = load_model()
 data = load_data()
+
+# Show column names for debugging
+st.write("Data columns:", data.columns)
+st.write("First few rows of data:", data.head())
 
 # Sidebar for user inputs
 st.sidebar.header("Maintenance Prediction Dashboard")
@@ -26,8 +28,8 @@ st.sidebar.header("Maintenance Prediction Dashboard")
 # Inputs for prediction
 st.sidebar.subheader("Model Parameters")
 input_features = {
-    "Quality Metric 1 (7-day avg)": st.sidebar.slider("Quality Metric 1 (7-day avg)", min_value=0.0, max_value=1.0, value=0.5),
-    "Quality Metric 2 (7-day avg)": st.sidebar.slider("Quality Metric 2 (7-day avg)", min_value=0.0, max_value=1.0, value=0.5),
+    "Quality Metric 1": st.sidebar.slider("Quality Metric 1", min_value=0.0, max_value=1.0, value=0.5),
+    "Quality Metric 2": st.sidebar.slider("Quality Metric 2", min_value=0.0, max_value=1.0, value=0.5),
     "Products per day": st.sidebar.slider("Products per day", min_value=0, max_value=1000, value=500)
 }
 
@@ -42,16 +44,22 @@ st.header("Data Visualization")
 
 # Plot some example visualizations
 st.subheader("Quality Metrics Distribution")
-fig, ax = plt.subplots()
-sns.histplot(data['Quality_Metric_1_7day_avg'], kde=True, ax=ax)
-ax.set_title("Distribution of Quality Metric 1")
-st.pyplot(fig)
+if 'Quality Metric 1' in data.columns:
+    fig, ax = plt.subplots()
+    sns.histplot(data['Quality Metric 1'], kde=True, ax=ax)
+    ax.set_title("Distribution of Quality Metric 1")
+    st.pyplot(fig)
+else:
+    st.write("Column 'Quality Metric 1' not found in the data.")
 
 st.subheader("Products Per Day")
-fig, ax = plt.subplots()
-sns.histplot(data['Products_per_day'], kde=True, ax=ax)
-ax.set_title("Distribution of Products per Day")
-st.pyplot(fig)
+if 'Production Day' in data.columns:
+    fig, ax = plt.subplots()
+    sns.histplot(data['Production Day'], kde=True, ax=ax)
+    ax.set_title("Distribution of Production Day")
+    st.pyplot(fig)
+else:
+    st.write("Column 'Production Day' not found in the data.")
 
 # Feedback Loop
 st.header("Feedback Loop")
