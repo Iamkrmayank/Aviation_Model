@@ -15,7 +15,7 @@ def load_model():
 def load_data():
     # Placeholder function to simulate data loading
     # Replace with actual data loading
-    return pd.read_csv('production_data_with_time_features.csv')
+    return pd.read_csv('Time_Series_5k_data.csv')
 
 model = load_model()
 data = load_data()
