@@ -1,11 +1,9 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, accuracy_score
+from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
 # Load and cache data
@@ -19,17 +17,17 @@ def load_data(uploaded_file):
 # Function to preprocess data
 def preprocess_data(df):
     # Convert datetime columns if they exist
-    datetime_cols = ['Production Datetime', 'Inspection Datetime', 'Delivery Datetime', 'Quality Issue Datetime']
+    datetime_cols = ['Production Date', 'Inspection Date', 'Delivery Date', 'Quality Issue Date']
     for col in datetime_cols:
         if col in df.columns:
             df[col] = pd.to_datetime(df[col])
 
     # Extract day, month, year, and hour from datetime columns if needed
-    if 'Production Datetime' in df.columns:
-        df['Production Day'] = df['Production Datetime'].dt.day
-        df['Production Month'] = df['Production Datetime'].dt.month
-        df['Production Year'] = df['Production Datetime'].dt.year
-        df['Production Hour'] = df['Production Datetime'].dt.hour
+    if 'Production Date' in df.columns:
+        df['Production Day'] = df['Production Date'].dt.day
+        df['Production Month'] = df['Production Date'].dt.month
+        df['Production Year'] = df['Production Date'].dt.year
+        df['Production Hour'] = df['Production Date'].dt.hour
 
     # Drop original datetime columns
     df.drop(columns=[col for col in datetime_cols if col in df.columns], inplace=True)
@@ -46,25 +44,36 @@ def preprocess_data(df):
     return df
 
 # Train model based on whether it's regression or classification
-def train_model(data, model_type="regression"):
+def train_model(data):
     st.write("Columns in the data:", data.columns.tolist())
 
-    required_columns = ['Quality Metric 1', 'Quality Metric 2', 'Production Day', 'Time to Quality Issue']
+    required_columns = ['Production Line ID', 'Product Type', 'Quality Metric 1', 'Quality Metric 2', 
+                        'Time to Inspection', 'Time from Delivery to Production', 'Production Day of Week',
+                        'Production Hour', 'Production Month', 'Lagged Quality Metric 1', 
+                        'Lagged Quality Metric 2', 'Rolling Avg Quality Metric 1', 
+                        'Rolling Avg Quality Metric 2', 'Supplier ID', 'Material Type', 
+                        'Material Quality Grade', 'Lead Time', 'Sensor ID', 'Sensor Type', 
+                        'Sensor Reading', 'Quality Issue ID', 'Quality Issue Type', 
+                        'Time to Quality Issue', 'Quality Issue Day of Week', 
+                        'Quality Issue Hour', 'Quality Issue Month', 'Production Day', 'Production Year']
     missing_columns = [col for col in required_columns if col not in data.columns]
 
-    if missing_columns:
-        st.error(f"Missing columns: {', '.join(missing_columns)}")
-        return None
 
-    # Prepare data
-    X = data[['Quality Metric 1', 'Quality Metric 2', 'Production Day']]
-    y = data['Time to Quality Issue']
-
+    X = data.drop(columns=['Quality Status'])
+    y = data['Quality Status']
+    
     # Split the data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Initialize the model
+    # Standardize features
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    # Choose model
+    model_type = st.session_state.get('model_type', 'regression')
     if model_type == "classification":
+        from sklearn.ensemble import RandomForestClassifier
         model = RandomForestClassifier(n_estimators=100, random_state=42)
         y_train = y_train.astype(int)
         y_test = y_test.astype(int)
@@ -77,13 +86,14 @@ def train_model(data, model_type="regression"):
     # Evaluate the model
     y_pred = model.predict(X_test)
     if model_type == "classification":
+        from sklearn.metrics import accuracy_score
         accuracy = accuracy_score(y_test, y_pred)
         st.write(f"Accuracy: {accuracy:.2f}")
     else:
         mse = mean_squared_error(y_test, y_pred)
         st.write(f"Mean Squared Error: {mse:.2f}")
 
-    return model
+    return model, scaler
 
 # Main Streamlit App
 st.title("Predictive Model Training and Prediction")
@@ -103,41 +113,34 @@ if df is not None:
 
     # Model type selection
     model_type = st.selectbox("Select Model Type", ["regression", "classification"])
+    st.session_state['model_type'] = model_type
 
     # Train model
     if st.button("Train Model"):
-        model = train_model(df, model_type=model_type)
+        model, scaler = train_model(df)
         if model:
             st.success("Model trained successfully!")
 
     # Prediction
     if model_type == "regression":
         st.subheader("Predict Quality Metric")
-        quality_metric_1 = st.number_input("Quality Metric 1")
-        quality_metric_2 = st.number_input("Quality Metric 2")
-        production_day = st.number_input("Production Day")
+        input_data = {col: st.number_input(col) for col in df.columns if col != 'Target'}
+        input_df = pd.DataFrame([input_data])
 
         if st.button("Predict"):
-            input_data = pd.DataFrame({
-                'Quality Metric 1': [quality_metric_1],
-                'Quality Metric 2': [quality_metric_2],
-                'Production Day': [production_day]
-            })
-            prediction = model.predict(input_data)
-            st.write(f"Predicted Time to Quality Issue: {prediction[0]:.2f}")
+            input_data_processed = preprocess_data(input_df)
+            input_data_scaled = scaler.transform(input_data_processed)
+            prediction = model.predict(input_data_scaled)
+            st.write(f"Predicted Quality Metric: {prediction[0]:.2f}")
     elif model_type == "classification":
         st.subheader("Predict Quality Issue Type")
-        quality_metric_1 = st.number_input("Quality Metric 1")
-        quality_metric_2 = st.number_input("Quality Metric 2")
-        production_day = st.number_input("Production Day")
+        input_data = {col: st.number_input(col) for col in df.columns if col != 'Target'}
+        input_df = pd.DataFrame([input_data])
 
         if st.button("Predict"):
-            input_data = pd.DataFrame({
-                'Quality Metric 1': [quality_metric_1],
-                'Quality Metric 2': [quality_metric_2],
-                'Production Day': [production_day]
-            })
-            prediction = model.predict(input_data)
+            input_data_processed = preprocess_data(input_df)
+            input_data_scaled = scaler.transform(input_data_processed)
+            prediction = model.predict(input_data_scaled)
             st.write(f"Predicted Quality Issue Type: {prediction[0]}")
 else:
     st.write("Please upload a CSV file.")
