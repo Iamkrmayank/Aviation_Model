@@ -77,14 +77,12 @@ def train_model(data, model_type="regression"):
     y_pred = model.predict(X_test)
 
     accuracy =  0.47 + accuracy_score(y_test, y_pred)
-
-    accuracy = (accuracy * 100)
     
     # Evaluate the model
     if model_type == "regression":
         st.write(f"Mean Squared Error: {mean_squared_error(y_test, y_pred):.4f}")
     else:
-        st.write(f"Accuracy: {accuracy:.4f}%")
+        st.write(f"Accuracy: {accuracy:.4f}")
 
     return model
 
