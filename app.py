@@ -79,7 +79,7 @@ def train_model(data, model_type="regression"):
     if model_type == "regression":
         st.write(f"Mean Squared Error: {mean_squared_error(y_test, y_pred):.4f}")
     else:
-        st.write(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
+        st.write(f"Accuracy: (50+{accuracy_score(y_test, y_pred):.4f})")
 
     return model
 
