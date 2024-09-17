@@ -47,7 +47,8 @@ def preprocess_data(df):
 
 # Train model based on whether it's regression or classification
 def train_model(data, model_type="regression"):
-    st.write("Columns in the data:", data.columns.tolist())
+    # Removed display of column names
+    # st.write("Columns in the data:", data.columns.tolist())
 
     required_columns = ['Quality Metric 1', 'Quality Metric 2', 'Production Day', 'Time to Quality Issue']
     missing_columns = [col for col in required_columns if col not in data.columns]
